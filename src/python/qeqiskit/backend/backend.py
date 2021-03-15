@@ -289,12 +289,34 @@ class QiskitBackend(QuantumBackend):
             qr = QuantumRegister(num_qubits)
             meas_cals, state_labels = complete_meas_cal(qubit_list=qubit_list, qr=qr)
 
-            # Execute the calibration circuits
-            job = execute(meas_cals, self.device, shots=self.n_samples)
-            cal_results = job.result()
+            # Batch the calibration circuits
+            n_batch_samples = self.n_samples // self.batch_size
+            n_leftover_samples = self.n_samples % self.batch_size
+            meas_fitter = None
+            for i in range(n_batch_samples):
+                # Execute the calibration circuits
+                job = execute(meas_cals, self.device, shots=self.batch_size)
+                cal_results = job.result()
 
-            # Make a calibration matrix
-            meas_fitter = CompleteMeasFitter(cal_results, state_labels)
+                if i == 0:
+                    # Make a calibration matrix
+                    meas_fitter = CompleteMeasFitter(cal_results, state_labels)
+                else:
+                    # Update calibration matrix
+                    meas_fitter.add_data(cal_results, True)
+
+            if n_leftover_samples > 0:
+                # Execute the calibration circuits
+                job = execute(meas_cals, self.device, shots=n_leftover_samples)
+                cal_results = job.result()
+
+                if n_batch_samples == 0:
+                    # Make a calibration matrix
+                    meas_fitter = CompleteMeasFitter(cal_results, state_labels)
+                else:
+                    # Update calibration matrix
+                    meas_fitter.add_data(cal_results, True)
+
             # Create a measurement filter from the calibration matrix
             self.readout_correction_filter = meas_fitter.filter
 

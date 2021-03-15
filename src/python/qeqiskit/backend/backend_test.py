@@ -153,6 +153,24 @@ class TestQiskitBackend(QuantumBackendTests):
         assert backend.readout_correction
         assert backend.readout_correction_filter is not None
 
+    def test_readout_correction_batching_works(self):
+        # Given
+        ibmq_api_token = os.getenv("ZAPATA_IBMQ_API_TOKEN")
+        backend = QiskitBackend(
+            device_name="ibmq_qasm_simulator",
+            n_samples=8192 * 2 + 1000,
+            api_token=ibmq_api_token,
+            readout_correction=True,
+        )
+        circuit = self.x_cnot_circuit()
+
+        # When
+        backend.run_circuit_and_measure(circuit)
+
+        # Then
+        assert backend.readout_correction
+        assert backend.readout_correction_filter is not None
+
     def test_readout_correction_works_run_circuitset_and_measure(self):
         # Given
         ibmq_api_token = os.getenv("ZAPATA_IBMQ_API_TOKEN")
