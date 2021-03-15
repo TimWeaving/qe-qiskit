@@ -290,12 +290,12 @@ class QiskitBackend(QuantumBackend):
             meas_cals, state_labels = complete_meas_cal(qubit_list=qubit_list, qr=qr)
 
             # Batch the calibration circuits
-            n_batch_samples = self.n_samples // self.batch_size
-            n_leftover_samples = self.n_samples % self.batch_size
+            n_batch_samples = self.n_samples // self.max_shots
+            n_leftover_samples = self.n_samples % self.max_shots
             meas_fitter = None
             for i in range(n_batch_samples):
                 # Execute the calibration circuits
-                job = execute(meas_cals, self.device, shots=self.batch_size)
+                job = execute(meas_cals, self.device, shots=self.max_shots)
                 cal_results = job.result()
 
                 if i == 0:
